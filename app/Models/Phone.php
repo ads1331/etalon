@@ -10,7 +10,7 @@ class Phone extends Model
     use HasFactory;
 
     protected $table = 'phones';
-    protected $fillable = ['user_id', 'phone', 'type'];
+    protected $fillable = ['user_id', 'number', 'type'];
     public $timestamps = false;
    
    

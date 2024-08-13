@@ -27,12 +27,12 @@ class User extends Model
     
     public function links()
     {
-        return $this->hasmany(Links::class);
+        return $this->hasMany(Links::class);
     }
 
     public function dates()
     {
-        return $this->hasmany(Dates::class);
+        return $this->hasMany(Dates::class);
     }
     public function companies()
     {
