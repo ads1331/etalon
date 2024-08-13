@@ -10,6 +10,7 @@ use App\Models\Dates;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Response as HttpResponse;
 
 class ApiService
 {
@@ -41,6 +42,7 @@ class ApiService
                 'status' => 'success',
                 'message' => 'User and related data stored successfully',
                 'user' => $user,
+                'http_status' => HttpResponse::HTTP_CREATED
             ];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -48,6 +50,7 @@ class ApiService
             return [
                 'status' => 'error',
                 'message' => 'An error occurred: ' . $e->getMessage(),
+                'http_status' => HttpResponse::HTTP_INTERNAL_SERVER_ERROR
             ];
         }
     }
@@ -68,6 +71,7 @@ class ApiService
                 'status' => 'success',
                 'message' => 'User and related data updated successfully',
                 'user' => $user,
+                'http_status' => HttpResponse::HTTP_OK
             ];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -75,22 +79,44 @@ class ApiService
             return [
                 'status' => 'error',
                 'message' => 'An error occurred: ' . $e->getMessage(),
+                'http_status' => HttpResponse::HTTP_INTERNAL_SERVER_ERROR
             ];
         }
     }
 
     public function deleteUser($id)
     {
-        User::destroy($id);
-        return [
-            'status' => 'success',
-            'message' => 'User deleted successfully',
-        ];
+        try {
+            $user = User::find($id);
+
+            if (!$user) {
+                return [
+                    'status' => 'error',
+                    'message' => 'User not found',
+                    'http_status' => HttpResponse::HTTP_NOT_FOUND
+                ];
+            }
+
+
+            $user->delete();
+
+            return [
+                'status' => 'success',
+                'message' => 'User deleted successfully',
+                'http_status' => HttpResponse::HTTP_OK
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error deleting user:', ['error' => $e->getMessage()]);
+            return [
+                'status' => 'error',
+                'message' => 'An error occurred: ' . $e->getMessage(),
+                'http_status' => HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            ];
+        }
     }
 
     private function storeRelatedData($userId, array $data)
     {
-
         foreach ($data['phone'] ?? [] as $phoneData) {
             Phone::create([
                 'user_id' => $userId,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Services\ApiService;
 use Illuminate\Http\Request;
+use App\Http\Requests\SomeRequest;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Http\Response as HttpResponse;
 
@@ -28,36 +29,30 @@ class ApiController extends BaseController
         return response()->json(['data' => $item]);
     }
 
-    public function store(Request $request)
+    public function store(SomeRequest $request)
     {
         $result = $this->apiService->createUser($request->all());
 
-        if ($result['status'] === 'success') {
-            return response()->json(['message' => $result['message'], 'user' => $result['user']], HttpResponse::HTTP_CREATED);
-        }
-
-        return response()->json(['error' => $result['message']], HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        return response()->json(
+            ['message' => $result['message'], 'user' => $result['user'] ?? null], $result['http_status']
+        );
     }
 
-    public function update(Request $request, $id)
+    public function update(SomeRequest $request, $id)
     {
         $result = $this->apiService->updateUser($id, $request->all());
 
-        if ($result['status'] === 'success') {
-            return response()->json(['message' => $result['message'], 'user' => $result['user']]);
-        }
-
-        return response()->json(['error' => $result['message']], HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        return response()->json(
+            ['message' => $result['message'], 'user' => $result['user'] ?? null], $result['http_status']
+        );
     }
 
     public function destroy($id)
     {
         $result = $this->apiService->deleteUser($id);
 
-        if ($result['status'] === 'success') {
-            return response()->json(['message' => $result['message']], HttpResponse::HTTP_NO_CONTENT);
-        }
-
-        return response()->json(['error' => $result['message']], HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        return response()->json(
+            ['message' => $result['message']], $result['http_status']
+        );
     }
 }
