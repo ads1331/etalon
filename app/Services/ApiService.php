@@ -10,37 +10,61 @@ use App\Models\Dates;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\AuthUser;
+use Illuminate\Support\Facades\Auth; 
 use Illuminate\Http\Response as HttpResponse;
 
 class ApiService
 {
     public function getAllUsers()
     {
-        return User::with(['phone', 'emails', 'links', 'dates', 'companies'])->get();
+        try {
+            return User::all();
+        } catch (\Exception $e) {
+            Log::error('Error fetching users:', ['error' => $e->getMessage()]);
+            throw new \Exception('Failed to fetch users');
+        }
     }
 
     public function getUserById($id)
     {
-        return User::with(['phone', 'emails', 'links', 'dates', 'companies'])->findOrFail($id);
+        try {
+            return User::findOrFail($id);
+        } catch (\Exception $e) {
+            Log::error('Error fetching user:', ['error' => $e->getMessage()]);
+            throw new \Exception('Failed to fetch user');
+        }
     }
 
     public function createUser(array $data)
     {
-        DB::beginTransaction();
         try {
-            $userData = $data['user'] ?? [];
-            if (empty($userData)) {
-                throw new \Exception('User data is missing');
+            DB::beginTransaction();
+            
+            $authId = Auth::id();
+            
+
+            if (!$authId || !AuthUser::find($authId)) {
+                throw new \Exception('Invalid auth_id');
             }
+    
+            
+            $userData = $data['user'] ?? [];
+            $userData['auth_id'] = $authId;
+    
 
+            if (empty($userData['first_name']) || empty($userData['last_name'])) {
+                throw new \Exception('First name and last name are required.');
+            }
+    
             $user = User::create($userData);
-
-            $this->storeRelatedData($user->id, $data);
-
+    
+           $this->storeRelatedData($user->id, $data);
+    
             DB::commit();
             return [
                 'status' => 'success',
-                'message' => 'User and related data stored successfully',
+                'message' => 'User created successfully',
                 'user' => $user,
                 'http_status' => HttpResponse::HTTP_CREATED
             ];
@@ -54,6 +78,34 @@ class ApiService
             ];
         }
     }
+    public function getContactsByAuthId()
+{
+    try {
+        $authId = Auth::id();
+        $users = User::where('auth_id', $authId)
+            ->with(['phone', 'emails', 'links', 'dates', 'companies'])
+            ->get();
+        
+        if ($users->isEmpty()) {
+            throw new \Exception('No users found for the given auth_id');
+        }
+
+        return [
+            'status' => 'success',
+            'users' => $users,
+            'http_status' => HttpResponse::HTTP_OK
+        ];
+    } catch (\Exception $e) {
+        Log::error('Error fetching contacts by auth_id:', ['error' => $e->getMessage()]);
+        return [
+            'status' => 'error',
+            'message' => 'An error occurred: ' . $e->getMessage(),
+            'http_status' => HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+        ];
+    }
+}
+
+        
 
     public function updateUser($id, array $data)
     {

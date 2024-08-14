@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id(); 
-            $table->string('first_name'); 
-            $table->string('last_name');
-            $table->text('notes')->nullable();
-            $table->unsignedBigInteger('auth_id');
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreignId('auth_id')->nullable()->constrained('auth_users')->onDelete('set null');
         });
     }
 
@@ -26,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['auth_id']);
+            $table->dropColumn('auth_id');
+        });
     }
 };

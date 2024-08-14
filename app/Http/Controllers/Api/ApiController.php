@@ -32,11 +32,12 @@ class ApiController extends BaseController
     public function store(SomeRequest $request)
     {
         $result = $this->apiService->createUser($request->all());
-
+    
         return response()->json(
             ['message' => $result['message'], 'user' => $result['user'] ?? null], $result['http_status']
         );
     }
+    
 
     public function update(SomeRequest $request, $id)
     {
@@ -55,4 +56,13 @@ class ApiController extends BaseController
             ['message' => $result['message']], $result['http_status']
         );
     }
+    public function contacts()
+{
+    $result = $this->apiService->getContactsByAuthId();
+
+    return response()->json(
+        ['message' => $result['message'] ?? 'Contacts fetched successfully', 'users' => $result['users'] ?? []], $result['http_status']
+    );
+}
+
 }
